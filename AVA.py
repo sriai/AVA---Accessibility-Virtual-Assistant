@@ -1,7 +1,9 @@
-import sys, math, random, pyttsx, webbrowser, datetime, time, urllib2, string, platform, json, pyautogui, vlc, os
+import sys, math, random, pyttsx3, webbrowser, datetime, time, requests, string, platform, json, pyautogui, vlc, os, re
+from fake_useragent import UserAgent
 from bs4 import *
 import speech_recognition as sr
-from PyQt4 import QtGui, QtCore
+from PyQt5.QtWidgets import QApplication, QWidget, QTextEdit, QProgressBar, QPushButton
+from PyQt5.QtGui import QIcon
 
 # Checking lists and dictionaries:-
 conjunctions = ['For', 'And', 'Nor', 'But', 'Or', 'Yet', 'So', 'After', 'Although', 'As', 'Because', 'Before', 'If',
@@ -112,9 +114,13 @@ webSearch = ['found something...', 'This is what I found...', 'Here is what I fo
 # Properties and objects for various modules :-
 Bot = "J.A.R.V.I.S"
 
-engine = pyttsx.init()
-rate = engine.getProperty('rate')
-engine.setProperty('rate', rate - 40)
+engine = pyttsx3.init()
+
+en_voice = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\MSTTS_V110_enUS_EvaM"
+engine.setProperty('voice', en_voice)
+sp_rate = engine.getProperty('rate')
+sp_rate = sp_rate - 30
+engine.setProperty('rate', sp_rate)
 
 global opr
 
@@ -127,7 +133,7 @@ mic = sr.Microphone()
 # Listener toggle -
 def listenToggle(
         command):  # Function to toggle the 'listening' of the program (from 'listening' to 'not listening' or vice versa)
-    if (command in toggleListening[1]):
+    if command in toggleListening[1]:
         while True:
             with mic as source:
                 audio = mic_recog.listen(source)
@@ -138,13 +144,13 @@ def listenToggle(
                 if str is bytes:
                     toggleCommand = ("{}".format(value).encode("utf-8"))
 
-                    if (toggleCommand in toggleListening[0]):
+                    if toggleCommand in toggleListening[0]:
                         break
 
                 else:
                     toggleCommand = ("{}".format(value))
 
-                    if (toggleCommand in toggleListening[0]):
+                    if toggleCommand in toggleListening[0]:
                         break
 
             except sr.UnknownValueError:
@@ -156,32 +162,31 @@ def playMedia(mName, mFilePath):  # Function to handle multimedia files - Songs,
     for root, dirs, files in os.walk(mFilePath):
         for fileFound in files:
             global mediaName
-            if (((mName.lower() in fileFound.lower()) and (mFilePath == 'C:/Users/harsh/Music/'))):
+            if (mName.lower() in fileFound.lower()) and (mFilePath == 'C:/Users/harsh/Music/'):
                 mFileExt = os.path.splitext(fileFound)
                 if (mFileExt[1] in mExtTypes[0]):
                     mediaName = os.path.join(root, fileFound)
 
-            elif (((mName.lower() in fileFound.lower()) and (
-                (mFilePath == 'C:/Users/harsh/Videos/') or (mFilePath == 'C:/Movies/')))):
+            elif (mName.lower() in fileFound.lower()) and ((mFilePath == 'C:/Users/harsh/Videos/') or (mFilePath == 'C:/Movies/')):
                 mFileExt = os.path.splitext(fileFound)
-                if (mFileExt[1] in mExtTypes[1]):
+                if mFileExt[1] in mExtTypes[1]:
                     mediaName = os.path.join(root, fileFound)
 
 
 # multimedia state toggle -
 def mMediaToggle(command):  # Function for toggling operations, i.e. Play, Pause or Stop the current multimedia file
 
-    if (command in mPlayerToggle[0]):
+    if command in mPlayerToggle[0]:
         try:
             playMFile.play()
         except:
             print ("Playing media operation can not be performed")
-    elif (command in mPlayerToggle[1]):
+    elif command in mPlayerToggle[1]:
         try:
             playMFile.pause()
         except:
             print ("Pausing media operation can not be performed !")
-    elif (command in mPlayerToggle[2]):
+    elif command in mPlayerToggle[2]:
         try:
             playMFile.stop()
         except:
@@ -201,22 +206,22 @@ def getTypeData():  # Function to start the 'Typing Mode'
 
             if str is bytes:
                 typeData = ("{}".format(value).encode("utf-8"))
-                if (typeData == typeMode[1]):
+                if typeData == typeMode[1]:
                     break
                 elif any(typeData in subl for subl in automateKBoard):
                     keyBoardAutomater(typeData)
-                elif (typeData in specialChars):
+                elif typeData in specialChars:
                     pyautogui.typewrite(typeData)
                 else:
                     pyautogui.typewrite((typeData), interval=0.05)
 
             else:
                 typeData = ("{}".format(value))
-                if (typeData == typeMode[1]):
+                if typeData == typeMode[1]:
                     break
                 elif any(typeData in subl for subl in automateKBoard):
                     keyBoardAutomater(typeData)
-                elif (typeData in specialChars):
+                elif typeData in specialChars:
                     pyautogui.typewrite(typeData)
                 else:
                     pyautogui.typewrite((typeData), interval=0.05)
@@ -232,60 +237,66 @@ def getTypeData():  # Function to start the 'Typing Mode'
 # active window operations:-
 def keyBoardAutomater(
         inputCommand):  # Function to automate small windows operations - Closing any current program, Opening a new tab or starting 'typing mode'
-    if (inputCommand in automateKBoard[0]):
+    if inputCommand in automateKBoard[0]:
         pyautogui.hotkey('altleft', 'f4')
-    elif (inputCommand in automateKBoard[1]):
+    elif inputCommand in automateKBoard[1]:
         pyautogui.hotkey('ctrlleft', 't')
     elif (inputCommand in automateKBoard[2]) or (inputCommand in automateKBoard[3]):
         pyautogui.hotkey('enter')
-    elif (inputCommand in automateKBoard[4]):
+    elif inputCommand in automateKBoard[4]:
         pyautogui.hotkey('backspace')
-    elif (inputCommand in automateKBoard[5]):
+    elif inputCommand in automateKBoard[5]:
         pyautogui.hotkey('delete')
-    elif (inputCommand in automateKBoard[6]):
+    elif inputCommand in automateKBoard[6]:
         pyautogui.hotkey('tab')
-    elif (inputCommand in automateKBoard[7]):
+    elif inputCommand in automateKBoard[7]:
         pyautogui.hotkey('shiftleft')
-    elif (inputCommand in automateKBoard[8]):
+    elif inputCommand in automateKBoard[8]:
         pyautogui.hotkey('shiftright')
-    elif (inputCommand in automateKBoard[9]):
+    elif inputCommand in automateKBoard[9]:
         pyautogui.hotkey('capslock')
-    elif (inputCommand in automateKBoard[10]):
+    elif inputCommand in automateKBoard[10]:
         pyautogui.hotkey('numlock')
-    elif (inputCommand in automateKBoard[11]):
+    elif inputCommand in automateKBoard[11]:
         pyautogui.hotkey('ctrlleft')
-    elif (inputCommand in automateKBoard[12]):
+    elif inputCommand in automateKBoard[12]:
         pyautogui.hotkey('altleft')
-    elif (inputCommand in automateKBoard[13]):
+    elif inputCommand in automateKBoard[13]:
         pyautogui.hotkey('altright')
-    elif (inputCommand in automateKBoard[14]):
+    elif inputCommand in automateKBoard[14]:
         pyautogui.hotkey('ctrlright')
-    elif (inputCommand in automateKBoard[15]):
+    elif inputCommand in automateKBoard[15]:
         pyautogui.hotkey('escape')
-    elif (inputCommand in automateKBoard[16]):
+    elif inputCommand in automateKBoard[16]:
         pyautogui.hotkey('pgup')
-    elif (inputCommand in automateKBoard[17]):
+    elif inputCommand in automateKBoard[17]:
         pyautogui.hotkey('pgdn')
-    elif (inputCommand in automateKBoard[18]):
+    elif inputCommand in automateKBoard[18]:
         pyautogui.hotkey('space')
-    elif (inputCommand in automateKBoard[19]):
+    elif inputCommand in automateKBoard[19]:
         pyautogui.hotkey('win', 'prtscr')
-    elif (inputCommand == typeMode[0]):
+    elif inputCommand == typeMode[0]:
         getTypeData()
 
 
 # GetLocale:-
 def getLoc():  # Function to automatically determining the geographic location of the user based on the assigned IP address
     # Automatically geolocate the connecting IP
-    f = urllib2.urlopen('http://ip-api.com/json/')
-    json_string = f.read()
-    f.close()
-    location = json.loads(json_string)
+    # f = urllib2.urlopen()
+    # json_string = f.read()
+    # f.close()
+
+    ua = UserAgent()
+    headers = {
+        'user-agent' : ua.random
+    }
+    ip_page = requests.get('http://ip-api.com/json/', headers = headers)
+    location = json.loads(ip_page.text)
     location_city = location['city']
     location_state = location['regionName']
     location_country = location['country']
     location_zip = location['zip']
-    reply = ("Your current location is : %s, %s, %s.") % (location_city, location_state, location_country)
+    reply = ("Your current location is : %s, %s, %s. Zip Code - ") % (location_city, location_state, location_country, location_zip)
     engine.say(reply)
     txt.insertPlainText(Bot + " : " + reply + "\n")
 
@@ -293,28 +304,37 @@ def getLoc():  # Function to automatically determining the geographic location o
 # Weather conditions based on current location :-
 def getLocalWeather():  # Function to gather local weather (temperature) information based on the autolocated geographic location.
     # Automatically geolocate the connecting IP
-    f = urllib2.urlopen('http://ip-api.com/json/')
-    json_string = f.read()
-    f.close()
-    location = json.loads(json_string)
-    location_city = location['city']
-    location_state = location['regionName']
-    location_country = location['country']
+    # f = urllib2.urlopen('http://ip-api.com/json/')
+    # json_string = f.read()
+    # f.close()
+
+    ua = UserAgent()
+    headers = {
+        'user-agent' : ua.random
+    }
+
+    # import pdb; pdb.set_trace()
+
+    ip_page = requests.get('http://ip-api.com/json/', headers = headers)
+    location = json.loads(ip_page.text)
     location_zip = location['zip']
 
     # Get weather conditions at location fetched from above
-    f = urllib2.urlopen(
-        "http://api.wunderground.com/api/73a91fc9316a85f8/geolookup/conditions/q/" + location_country + "/" + location_city + ".json")
-    json_string = f.read()
-    parsed_json = json.loads(json_string)
-    location = parsed_json['location']['city']
-    temp_c = parsed_json['current_observation']['temp_c']
-    weatherType = parsed_json['current_observation']['weather']
+    # f = urllib2.urlopen()
+    # json_string = f.read()
+
+    weather_api_key = ["2b22e9a66e82061eca13922a09283971", "bc5f3d990e037d05eb905a48cec388ca"]
+    weather_url = "http://api.openweathermap.org/data/2.5/weather?q=" + location_zip + "&appid=" + str(random.choice(weather_api_key))
+    weather_page = requests.get(weather_url, headers = headers)
+    parsed_json = json.loads(weather_page.text)
+    location = parsed_json['name']
+    temp_c = round(float(parsed_json['main']['temp']) - 273.15, 2)
+    feels_like = round(float(parsed_json['main']['feels_like']) - 273.15, 2)
+    weatherType = parsed_json['weather'][0]['main']
     degSym = u'\xb0'
-    reply = ("Current temperature in %s is: %s " + degSym + "C, with %s weather.") % (location, temp_c, weatherType)
+    reply = ("Current temperature in %s is: %s %sC, Feels like %s %sC, with %s weather.") % (location, temp_c, degSym, feels_like, degSym, weatherType)
     engine.say(reply)
     txt.insertPlainText(Bot + " : " + reply + "\n")
-    f.close()
     engine.runAndWait()
 
 
@@ -344,23 +364,24 @@ day = now.strftime("%A")
 
 
 # Program GUI :-
-class guiWindow(QtGui.QMainWindow):
+# class guiWindow(QtGui.QMainWindow):
+class MainWindow(QWidget):
     def __init__(self):
-        super(guiWindow, self).__init__()
+        super().__init__()
         self.setGeometry(300, 150, 750, 500)
         self.setWindowTitle("Accessibility Virtual Assistant")
-        self.setWindowIcon(QtGui.QIcon("bgimg.jpg"))
+        self.setWindowIcon(QIcon("bgimg.jpg"))
         self.setStyleSheet('background-color: #ffff66;')
         self.setFixedSize(750, 500)
 
         global txt
 
-        txt = QtGui.QTextEdit(self)
+        txt = QTextEdit(self)
         txt.setStyleSheet("QTextEdit {background-color: white; color: black; font-size: 14px; font-weight: bold;}")
         txt.setGeometry(100, 90, 550, 300)
         txt.setReadOnly(1)
 
-        self.process = QtGui.QProgressBar(self)
+        self.process = QProgressBar(self)
         self.process.setGeometry(100, 400, 585, 30)
 
         # self.closebtn()
@@ -368,7 +389,7 @@ class guiWindow(QtGui.QMainWindow):
         self.show()
 
     def prnt(self):
-        btn1 = QtGui.QPushButton("Start !", self)
+        btn1 = QPushButton("Start !", self)
         btn1.setStyleSheet('QPushButton {background-color: #ff7733; color: white; font-weight: bold; font-size: 14px;}')
         btn1.clicked.connect(self.ava)
         btn1.resize(100, 50)
@@ -382,8 +403,8 @@ class guiWindow(QtGui.QMainWindow):
                 mic_recog.adjust_for_ambient_noise(source)
             txt.insertPlainText("Minimum enery threshold is : {}".format(mic_recog.energy_threshold))
 
-            start = "\nWelcome sir !"  # User interaction starts here
-            reply = (start)
+            start = "\nWaddup yo!\n"  # User interaction starts here
+            reply = start
             engine.say(reply)
             txt.insertPlainText(reply)
             engine.runAndWait()
@@ -410,596 +431,307 @@ class guiWindow(QtGui.QMainWindow):
                     self.process.setValue(self.completed)
 
                 try:
+                    # import pdb; pdb.set_trace()
                     value = mic_recog.recognize_google(audio)
+                    comms = ("{}".format(value))
+                    print("You -> " + comms)
+                    # Starts checking for the reply from here
+                    if comms in greets or comms in greets2:  # If Command was a greeting
+                        reply = random.choice(greets)
+                        engine.say(reply)
+                        txt.insertPlainText(Bot + " : " + reply.capitalize() + "!\n")
+                        engine.runAndWait()
 
-                    if str is bytes:  # For Python 2.x
-                        comms = "{}".format(value).encode("utf-8")
-                        u = "You"
-                        reply = "\n" + u + " : " + comms + "  \n"
-                        txt.insertPlainText(reply)
-                        # Starts checking for the reply from here
-                        if comms in greets or comms in greets2:  # If Command was a greeting
-                            reply = random.choice(greets)
-                            engine.say(reply)
-                            txt.insertPlainText(Bot + " : " + reply.capitalize() + "!\n")
-                            engine.runAndWait()
+                    elif comms in info:
+                        reply = projectDetails
+                        engine.say(reply)
+                        txt.insertPlainText(Bot + " : " + reply + "\n")
+                        engine.runAndWait()
 
-                        elif comms in info:
-                            reply = projectDetails
-                            engine.say(reply)
-                            txt.insertPlainText(Bot + " : " + reply + "\n")
-                            engine.runAndWait()
+                    elif comms in helpcom:  # If command was to list all available commands
+                        reply = "Following commands are stored for interaction and usage right now..."
+                        engine.say(reply)
+                        txt.insertPlainText(Bot + " : " + reply + "\n")
 
-                        elif comms in helpcom:  # If command was to list all available commands
-                            reply = "Following commands are stored for interaction and usage right now..."
-                            engine.say(reply)
-                            txt.insertPlainText(Bot + " : " + reply + "\n")
+                        txt.insertPlainText("Greeting commands -\n")
+                        for i in range(8):
+                            reply = greets[i]
+                            txt.insertPlainText("\t-> " + reply + "\n")
 
-                            txt.insertPlainText("Greeting commands -\n")
-                            for i in range(len(greets)):
-                                reply = greets[i]
-                                txt.insertPlainText("\t-> " + reply + "\n")
+                        for i in range(3):
+                            reply = greets2[i]
+                            txt.insertPlainText("\t-> " + reply + "\n")
 
-                            for i in range(len(greets2)):
-                                reply = greets2[i]
-                                txt.insertPlainText("\t-> " + reply + "\n")
+                        txt.insertPlainText("\nIntroductory commands -\n")
+                        for i in range(7):
+                            reply = botintro[i]
+                            txt.insertPlainText("\t-> " + reply + "\n")
 
-                            txt.insertPlainText("\nIntroductory commands -\n")
-                            for i in range(len(botintro)):
-                                reply = botintro[i]
-                                txt.insertPlainText("\t-> " + reply + "\n")
+                        txt.insertPlainText("\nClosing commands -\n")
+                        for i in range(12):
+                            reply = closing[i]
+                            txt.insertPlainText("\t-> " + reply + "\n")
 
-                            txt.insertPlainText("\nClosing commands -\n")
-                            for i in range(len(closing)):
-                                reply = closing[i]
-                                txt.insertPlainText("\t-> " + reply + "\n")
+                        txt.insertPlainText("\nInteraction commands -\n")
+                        for i in range(5):
+                            reply = botcall[i]
+                            txt.insertPlainText("\t-> " + reply + "\n")
 
-                            txt.insertPlainText("\nInteraction commands -\n")
-                            for i in range(len(botcall)):
-                                reply = botcall[i]
-                                txt.insertPlainText("\t-> " + reply + "\n")
+                        for i in range(9):
+                            reply = readycheck[i]
+                            txt.insertPlainText("\t-> " + reply + "\n")
 
-                            for i in range(len(readycheck)):
-                                reply = readycheck[i]
-                                txt.insertPlainText("\t-> " + reply + "\n")
+                        txt.insertPlainText("\nTime, Date and Day commands -\n")
+                        for i in range(9):
+                            reply = frequest[0][i]
+                            txt.insertPlainText("\t-> " + reply + "\n")
 
-                            txt.insertPlainText("\nTime, Date and Day commands -\n")
-                            for i in range(len(frequest[0])):
-                                reply = frequest[0][i]
-                                txt.insertPlainText("\t-> " + reply + "\n")
+                        for i in range(5):
+                            reply = frequest[1][i]
+                            txt.insertPlainText("\t-> " + reply + "\n")
 
-                            for i in range(len(frequest[1])):
-                                reply = frequest[1][i]
-                                txt.insertPlainText("\t-> " + reply + "\n")
+                        for i in range(5):
+                            reply = frequest[2][i]
+                            txt.insertPlainText("\t-> " + reply + "\n")
 
-                            for i in range(len(frequest[2])):
-                                reply = frequest[2][i]
-                                txt.insertPlainText("\t-> " + reply + "\n")
+                        txt.insertPlainText("\n Project info commands -\n")
+                        for i in range(6):
+                            reply = info[i]
+                            txt.insertPlainText("\t->" + reply + "\n")
 
-                            txt.insertPlainText("\n Project info commands -\n")
-                            for i in range(len(info)):
-                                reply = info[i]
-                                txt.insertPlainText("\t->" + reply + "\n")
+                        txt.insertPlainText("\n##### END OF COMMANDS #####\n")
+                        engine.runAndWait()
 
-                            txt.insertPlainText("\n##### END OF COMMANDS #####\n")
-                            engine.runAndWait()
+                    elif comms in botintro:  # Commands for bot intro
+                        reply = random.choice(introans)
+                        engine.say(reply)
+                        txt.insertPlainText(Bot + " : " + reply)
 
-                        elif comms in botintro:  # Commands for bot intro
-                            reply = random.choice(introans)
-                            engine.say(reply)
-                            txt.insertPlainText(Bot + " : " + reply)
+                    elif comms in botcall:  # Interactive commands
+                        reply = random.choice(botans)
+                        engine.say(reply)
+                        txt.insertPlainText(Bot + " : " + reply)
+                        engine.runAndWait()
 
-                        elif comms in botcall:  # Interactive commands
-                            reply = random.choice(botans)
-                            engine.say(reply)
-                            txt.insertPlainText(Bot + " : " + reply)
-                            engine.runAndWait()
+                    elif comms in readycheck:  # Interactive commands
+                        reply = random.choice(readyans)
+                        engine.say(reply)
+                        txt.insertPlainText(Bot + " : " + reply)
+                        engine.runAndWait()
 
-                        elif comms in readycheck:  # Interactive commands
-                            reply = random.choice(readyans)
-                            engine.say(reply)
-                            txt.insertPlainText(Bot + " : " + reply)
-                            engine.runAndWait()
+                    elif comms in frequest[0]:  # Commands to know - Time, Date or Day.
+                        timing()
 
-                        elif comms in frequest[0]:  # Commands to know - Time, Date or Day.
-                            timing()
+                    elif comms in frequest[1]:
+                        reply = date
+                        engine.say("Today's date is " + reply)
+                        txt.insertPlainText(Bot + " : " + "today's date is : " + reply + "\n")
+                        engine.runAndWait()
 
-                        elif comms in frequest[1]:
-                            reply = date
-                            engine.say("Today's date is " + reply)
-                            txt.insertPlainText(Bot + " : " + "today's date is : " + reply + "\n")
-                            engine.runAndWait()
+                    elif comms in frequest[2]:
+                        reply = day
+                        engine.say("The day today is : " + reply)
+                        txt.insertPlainText(Bot + " : " + "The day today is - " + reply + "\n")
+                        engine.runAndWait()
 
-                        elif comms in frequest[2]:
-                            reply = day
-                            engine.say("The day today is : " + reply)
-                            txt.insertPlainText(Bot + " : " + "The day today is - " + reply + "\n")
-                            engine.runAndWait()
+                    elif comms in toggleListening[1]:
+                        listenToggle(comms)
 
-                        elif comms in toggleListening[1]:
-                            listenToggle(comms)
+                    elif comms in weatherRep:  # Command to get 'weather' information for current location of execution
+                        getLocalWeather()
 
-                        elif comms in weatherRep:  # Command to get 'weather' information for current location of execution
-                            getLocalWeather()
+                    elif (comms in automateKBoard) or (comms in typeMode):  # Automate keyboard keys and shortcuts
+                        keyBoardAutomater(comms)
 
-                        elif any(comms in subl for subl in automateKBoard) or (
-                            comms in typeMode):  # Automate keyboard keys and shortcuts
-                            keyBoardAutomater(comms)
+                    elif comms in whereAbouts:  # Automatically locate the location of execution
+                        getLoc()
 
-                        elif comms in whereAbouts:  # Automatically locate the location of execution
-                            getLoc()
+                    elif (comms in mPlayerToggle[0]) or (comms in mPlayerToggle[1]) or (
+                        comms in mPlayerToggle[2]):
+                        mMediaToggle(comms)
 
-                        elif ((comms in mPlayerToggle[0]) or (comms in mPlayerToggle[1]) or (
-                            comms in mPlayerToggle[2])):
-                            mMediaToggle(comms)
-
-                        elif (comms.startswith(
-                                'play')):  # Condition for playing or starting a multimedia file (Song/Video/Music)
-                            mTypeGetter = comms.split()
-                            mPath = ''
-                            if ((mTypeGetter[0] == 'play') and (mTypeGetter[1] in mMediaType[0])):
+                    elif comms.startswith(
+                            'play'):  # Condition for playing or starting a multimedia file (Song/Video/Music)
+                        mTypeGetter = comms.split()
+                        mPath = ''
+                        if mTypeGetter[0] == 'play':
+                            if mTypeGetter[1] in mMediaType[0]:
                                 mPath = 'C:/Users/harsh/Music/'
-                            elif ((mTypeGetter[0] == 'play') and (mTypeGetter[1] in mMediaType[1])):
+                            elif mTypeGetter[1] in mMediaType[1]:
                                 mPath = 'C:/Users/harsh/Videos/'
-                            elif ((mTypeGetter[0] == 'play') and (mTypeGetter[1] in mMediaType[2])):
+                            elif mTypeGetter[1] in mMediaType[2]:
                                 mPath = 'C:/Movies/'
-                            for remIndex in range(2):
-                                mTypeGetter.remove(mTypeGetter[0])
-                            mTypeGetter = " ".join(mTypeGetter)
-                            mFilename = mTypeGetter
-                            playMedia(mFilename, mPath)
 
-                            try:
-                                global playMFile
+                        for remIndex in range(2):
+                            mTypeGetter.remove(mTypeGetter[0])
+                        mTypeGetter = " ".join(mTypeGetter)
+                        mFilename = mTypeGetter
+                        playMedia(mFilename, mPath)
 
-                                if ('playMFile' in globals()) and (playMFile != None):
-                                    playMFile.stop()
-                                    playMFile = ''
+                        try:
+                            global playMFile
 
-                                playMFile = vlc.MediaPlayer(mediaName)
-                                playMFile.play()
-                            except:
-                                print ('File not found!')
+                            if ('playMFile' in globals()) and (playMFile is not None):
+                                playMFile.stop()
+                                playMFile = ''
+
+                            playMFile = vlc.MediaPlayer(mediaName)
+                            playMFile.play()
+                        except:
+                            print ('File not found!')
 
 
-                        elif (comms in closing) or (comms in byes):  # Commands to Exit program
-                            reply = random.choice(byes)
-                            engine.say(reply)
+                    elif (comms in closing) or (comms in byes):  # Commands to Exit program
+                        reply = random.choice(byes)
+                        engine.say(reply)
 
-                            txt.insertPlainText(Bot + " : " + reply.capitalize() + "...\n")
-                            engine.runAndWait()
-                            sys.exit()
+                        txt.insertPlainText(Bot + " : " + reply.capitalize() + "...\n")
+                        engine.runAndWait()
+                        sys.exit()
 
-                        elif ('search' in comms) or ('search' and 'for' in comms) or ('define' in comms) or (
-                            ('what' and 'is') in comms) or ((
-                                                                'who' and 'is') in comms):  # Use 'Search', 'Search For', 'Define', 'who is' or 'what is' to find any definition online.
-                            try:
-                                commlist = (string.capwords(comms)).split()
-                                listlen = len(commlist)
-                                if (((commlist[0] == 'Define') or (commlist[0] == 'Search')) and (listlen <= 1)) or (
-                                      ((commlist[0] == 'What' and commlist[1] == 'Is') or (
-                                        commlist[0] == 'Who' and commlist[1] == 'Is') or (
-                                        commlist[0] == 'Search' and commlist[1] == 'For')) and (listlen <= 2)):
-                                    raise
+                    elif ('search' in comms) or ('search' and 'for' in comms) or ('define' in comms) or (('what' and 'is') in comms) or (('who' and 'is') in comms):  # Use 'Search', 'Search For', 'Define', 'who is' or 'what is' to find any definition online.
+                        try:
+                            commlist = (string.capwords(comms)).split()
+                            listlen = len(commlist)
+                            if (((commlist[0] == 'Define') or (commlist[0] == 'Search')) and (listlen <= 1)) or (((
+                                    commlist[0] == 'What' and commlist[1] == 'Is') or (
+                                    commlist[0] == 'Who' and commlist[1] == 'Is') or (
+                                    commlist[0] == 'Search' and commlist[1] == 'For')) and (listlen <= 2)):
+                                raise
 
-                                elif (commlist[0] == 'Define') or (commlist[0] == 'Search') or (
-                                        commlist[0] == 'Search' and commlist[1] == 'For') or (
-                                        commlist[0] == 'What' and commlist[1] == 'Is') or (
-                                        commlist[0] == 'Who' and commlist[1] == 'Is') or (
-                                        commlist[0] == 'Who' and commlist[1] == 'Are'):
-                                    for x in range(listlen - 1):
-                                        if (commlist[x] in conjunctions) or (commlist[x] in prepositions) or (
-                                            commlist[x] in articles):
-                                            commlist[x] = commlist[x].lower()
+                            elif (commlist[0] == 'Define') or (commlist[0] == 'Search') or (
+                                    commlist[0] == 'Search' and commlist[1] == 'For') or (
+                                    commlist[0] == 'What' and commlist[1] == 'Is') or (
+                                    commlist[0] == 'Who' and commlist[1] == 'Is') or (
+                                    commlist[0] == 'Who' and commlist[1] == 'Are'):
+                                for x in range(listlen - 1):
+                                    if (commlist[x] in conjunctions) or (commlist[x] in prepositions) or (
+                                        commlist[x] in articles):
+                                        commlist[x] = commlist[x].lower()
 
-                                    if commlist[0] == 'Define':
-                                        commlist.remove('Define')
-                                    elif (commlist[0] == 'Search' and commlist[1] == 'for'):
-                                        commlist.remove('Search')
-                                        commlist.remove('for')
-                                    elif commlist[0] == 'Search':
-                                        commlist.remove('Search')
-                                    elif (commlist[0] == 'What' and commlist[1] == 'Is'):
-                                        commlist.remove('What')
-                                        commlist.remove('Is')
-                                    elif (commlist[0] == 'Who' and commlist[1] == 'Is'):
-                                        commlist.remove('Who')
-                                        commlist.remove('Is')
-                                    elif (commlist[0] == 'Who' and commlist[1] == 'Are'):
-                                        commlist.remove('Who')
-                                        commlist.remove('Are')
+                                if commlist[0] == 'Define':
+                                    commlist.remove('Define')
+                                elif (commlist[0] == 'Search') and (commlist[1] == 'for'):
+                                    commlist.remove('Search')
+                                    commlist.remove('for')
+                                elif commlist[0] == 'Search':
+                                    commlist.remove('Search')
+                                elif (commlist[0] == 'What') and (commlist[1] == 'Is'):
+                                    commlist.remove('What')
+                                    commlist.remove('Is')
+                                elif (commlist[0] == 'Who') and (commlist[1] == 'Is'):
+                                    commlist.remove('Who')
+                                    commlist.remove('Is')
+                                elif (commlist[0] == 'Who') and (commlist[1] == 'Are'):
+                                    commlist.remove('Who')
+                                    commlist.remove('Are')
 
+                                try:
+                                    searchstr = "_".join(commlist)
+                                    txt.verticalScrollBar().setValue(txt.verticalScrollBar().maximum())
+                                    wiki_search = "https://en.wikipedia.org/wiki/" + searchstr
+                                    ua = UserAgent()
+                                    headers = {
+                                        'user-agent': ua.random
+                                    }
+                                    page = requests.get(wiki_search, headers=headers)
+                                    soup = BeautifulSoup(page.text, "html.parser")
+                                    reply = soup.find('h1', {'class': 'firstHeading'})
+                                    txt.insertPlainText("\n" + reply.text + ":-\n")
+                                    reply = soup.find('p')
+                                    txt.insertPlainText("\t" + reply.text + "\n")
+                                    engine.say(reply.text)
+
+                                except:
                                     searchstr = commlist
-                                    try:
-                                        searchstr = "_".join(commlist)
-                                        txt.verticalScrollBar().setValue(txt.verticalScrollBar().maximum())
-                                        wiki_search = ("https://en.wikipedia.org/wiki/" + searchstr)
-                                        page = urllib2.urlopen(wiki_search)
-                                        soup = BeautifulSoup(page, "html.parser")
-                                        reply = soup.find('h1', {'class': 'firstHeading'})
-                                        txt.insertPlainText("\n" + reply.text + ":-\n")
-                                        reply = soup.find('p')
-                                        txt.insertPlainText("\t" + reply.text + "\n")
-                                        engine.say(reply.text)
+                                    search = random.choice(webSearch)
+                                    concSay = " ".join(searchstr)
+                                    engine.say(search + "about" + concSay)
+                                    searchstr = "+".join(searchstr)
+                                    webbrowser.open('http://www.google.com/search?q=' + searchstr)
 
-                                    except:
-                                        searchstr = commlist
-                                        search = random.choice(webSearch)
-                                        concSay = " ".join(searchstr)
-                                        engine.say(search + "about" + concSay)
-                                        searchstr = "+".join(searchstr)
-                                        webbrowser.open('http://www.google.com/search?q=' + searchstr)
-
-                            except:
-                                searchstr = commlist
-                                search = random.choice(webSearch)
-                                concSay = " ".join(searchstr)
-                                engine.say(search + "about" + concSay)
-                                searchstr = "+".join(searchstr)
-                                webbrowser.open('http://www.google.com/search?q=' + searchstr)
+                        except:
+                            searchstr = commlist
+                            search = random.choice(webSearch)
+                            concSay = " ".join(searchstr)
+                            engine.say(search + "about" + concSay)
+                            searchstr = "+".join(searchstr)
+                            webbrowser.open('http://www.google.com/search?q=' + searchstr)
 
 
-                        elif 'calculate' in comms:  # 'Calculate' for calculating arithmetic operations
-                            commlist = comms.split()
-                            try:
-                                if (commlist[2] == '+') or (commlist[2] == 'subtracted') or (
-                                    commlist[2] == 'added') or (commlist[2] == 'times') or (
-                                    commlist[2] == 'multiplied') or (commlist[2] == 'divided') or (
-                                    commlist[2] == 'into') or (commlist[2] == 'upon') or (commlist[2] == 'minus') or (
-                                    commlist[2] == 'by') or (commlist[2] == 'x') or (commlist[2] == '-') or (
-                                    commlist[2] == '/'):
-                                    opr = commlist[2]
+                    elif 'calculate' in comms:  # 'Calculate' for calculating arithmetic operations
+                        commlist = comms.split()
+                        try:
+                            if ('+' in comms.lower()) or ('add' in comms.lower()) or ('plus' in comms.lower()):
+                                opr = 'add'
+                            elif ('-' in comms.lower()) or ('minus' in comms.lower()) or ('subtract' in comms.lower()):
+                                opr = 'diff'
+                            elif ('x' in comms.lower()) or ('multipl' in comms.lower()) or ('into' in comms.lower()) or ('times' in comms.lower()):
+                                opr = 'multi'
+                            elif ('/' in comms.lower()) or ('divide' in comms.lower()) or ('upon' in comms.lower()):
+                                opr = 'divide'
+                            elif ('raise' in commlist) or ('power' in commlist):
+                                opr = 'power'
 
-                                    # Basic arithmetic calculations -
-                                    def calc():
-                                        if (opr == '+') or (opr == 'added') or (opr == 'plus'):
-                                            res = num1 + num2
-                                            n1 = str(num1)
-                                            n2 = str(num2)
-                                            sol = str(res)
-                                            reply = ('The sum would be ' + sol)
-                                            engine.say('The sum would be ' + sol)
-                                            txt.insertPlainText(Bot + " : " + n1 + ' + ' + n2 + ' = ' + sol + "\n")
+                            # if (commlist[2] == '+') or (commlist[2] == 'subtracted') or (
+                            #     commlist[2] == 'added') or (commlist[2] == 'times') or (
+                            #     commlist[2] == 'multiplied') or (commlist[2] == 'divided') or (
+                            #     commlist[2] == 'into') or (commlist[2] == 'upon') or (commlist[2] == 'minus') or (
+                            #     commlist[2] == 'by') or (commlist[2] == 'x') or (commlist[2] == '-') or (
+                            #     commlist[2] == '/'):
+                            #     opr = commlist[2]
 
-                                        elif (opr == '-') or (opr == 'minus') or (opr == 'subtracted'):
-                                            res = num1 - num2
-                                            n1 = str(num1)
-                                            n2 = str(num2)
-                                            sol = str(res)
-                                            reply = ('The difference would be ' + sol)
-                                            engine.say('The difference would be ' + sol)
-                                            txt.insertPlainText(Bot + " : " + n1 + ' - ' + n2 + ' = ' + sol + "\n")
+                            import pdb; pdb.set_trace()
 
-                                        elif (opr == 'x') or (opr == 'into') or (opr == 'multiplied') or (
-                                            opr == 'times'):
-                                            res = num1 * num2
-                                            n1 = str(num1)
-                                            n2 = str(num2)
-                                            sol = str(res)
-                                            reply = ('The product would be ' + sol)
-                                            engine.say('The product would be ' + sol)
-                                            txt.insertPlainText(Bot + " : " + n1 + ' x ' + n2 + ' = ' + sol + "\n")
+                            # Basic arithmetic calculations -
+                            def calc(num1, num2):
+                                sol = ''
+                                calc_reply = ''
 
-                                        elif (opr == '/') or (opr == 'divided') or (opr == 'upon') or (opr == 'by'):
-                                            res = num1 / num2
-                                            n1 = str(num1)
-                                            n2 = str(num2)
-                                            sol = str(res)
-                                            reply = ('The result of division would be ' + sol)
-                                            engine.say('The result would be ' + sol)
-                                            txt.insertPlainText(Bot + " : " + n1 + ' / ' + n2 + ' = ' + sol + "\n")
+                                if opr == 'add':
+                                    sol = num1 + num2
+                                    calc_reply = '{} plus {} is '
 
-                                        else:
-                                            reply = "Only four basic arithmetic operations allowed right now..."
-                                            engine.say(reply)
-                                            txt.insertPlainText(reply + "\n")
-                                            engine.runAndWait()
+                                elif opr == 'diff':
+                                    sol = num1 - num2
+                                    calc_reply = '{} minus {} is '
 
-                                    if (commlist[3] == 'to') or (commlist[3] == 'by') or (commlist[3] == 'with'):
-                                        oprprep = commlist[3]
-                                        num1 = float(commlist[1])
-                                        num2 = float(commlist[4])
-                                        calc()
-                                    else:
-                                        num1 = float(commlist[1])
-                                        num2 = float(commlist[3])
-                                        calc()
+                                elif opr == 'multi':
+                                    sol = num1 * num2
+                                    calc_reply = '{} multiplied by {} is '
 
-                            except:
-                                txt.insertPlainText('Sorry, couldn\'t understand that...\nPlease try again...')
+                                elif opr == 'divide':
+                                    sol = num1 / num2
+                                    calc_reply = '{} divided by {} is '
 
-                        else:
-                            txt.insertPlainText(Bot + " =>\n" + "You said : '" + comms + "'\n")
+                                elif opr == 'power':
+                                    sol = num1 ** num2
+                                    calc_reply = "{} raised to the power {} is "
 
-                    else:  # For Python 3.x
-                        comms = ("{}".format(value))
-                        print("You -> " + comms)
-                        # Starts checking for the reply from here
-                        if comms in greets or comms in greets2:  # If Command was a greeting
-                            reply = random.choice(greets)
-                            engine.say(reply)
-                            txt.insertPlainText(Bot + " : " + reply.capitalize() + "!\n")
-                            engine.runAndWait()
+                                else:
+                                    calc_reply = "Only addition, subtraction, multiplication, division and power calculation are available..."
 
-                        elif comms in info:
-                            reply = projectDetails
-                            engine.say(reply)
-                            txt.insertPlainText(Bot + " : " + reply + "\n")
-                            engine.runAndWait()
+                                if (sol != '') and (calc_reply != ''):
+                                    num1 = str(num1)
+                                    num2 = str(num2)
+                                    sol = str(sol)
+                                    calc_reply = calc_reply.format(num1, num2)
+                                    calc_reply = calc_reply + sol + "\n"
 
-                        elif comms in helpcom:  # If command was to list all available commands
-                            reply = "Following commands are stored for interaction and usage right now..."
-                            engine.say(reply)
-                            txt.insertPlainText(Bot + " : " + reply + "\n")
+                                engine.say(calc_reply)
+                                txt.insertPlainText(Bot + " : " + calc_reply + "\n")
+                                engine.runAndWait()
 
-                            txt.insertPlainText("Greeting commands -\n")
-                            for i in range(8):
-                                reply = greets[i]
-                                txt.insertPlainText("\t-> " + reply + "\n")
+                            nums = re.findall('\d+', comms)
+                            n1 = round(float(nums[0]), 2)
+                            n2 = round(float(nums[1]), 2)
+                            calc(n1, n2)
 
-                            for i in range(3):
-                                reply = greets2[i]
-                                txt.insertPlainText("\t-> " + reply + "\n")
+                        except:
+                            txt.insertPlainText('Sorry, couldn\'t understand that...\nPlease try again...')
 
-                            txt.insertPlainText("\nIntroductory commands -\n")
-                            for i in range(7):
-                                reply = botintro[i]
-                                txt.insertPlainText("\t-> " + reply + "\n")
-
-                            txt.insertPlainText("\nClosing commands -\n")
-                            for i in range(12):
-                                reply = closing[i]
-                                txt.insertPlainText("\t-> " + reply + "\n")
-
-                            txt.insertPlainText("\nInteraction commands -\n")
-                            for i in range(5):
-                                reply = botcall[i]
-                                txt.insertPlainText("\t-> " + reply + "\n")
-
-                            for i in range(9):
-                                reply = readycheck[i]
-                                txt.insertPlainText("\t-> " + reply + "\n")
-
-                            txt.insertPlainText("\nTime, Date and Day commands -\n")
-                            for i in range(9):
-                                reply = frequest[0][i]
-                                txt.insertPlainText("\t-> " + reply + "\n")
-
-                            for i in range(5):
-                                reply = frequest[1][i]
-                                txt.insertPlainText("\t-> " + reply + "\n")
-
-                            for i in range(5):
-                                reply = frequest[2][i]
-                                txt.insertPlainText("\t-> " + reply + "\n")
-
-                            txt.insertPlainText("\n Project info commands -\n")
-                            for i in range(6):
-                                reply = info[i]
-                                txt.insertPlainText("\t->" + reply + "\n")
-
-                            txt.insertPlainText("\n##### END OF COMMANDS #####\n")
-                            engine.runAndWait()
-
-                        elif comms in botintro:  # Commands for bot intro
-                            reply = random.choice(introans)
-                            engine.say(reply)
-                            txt.insertPlainText(Bot + " : " + reply)
-
-                        elif comms in botcall:  # Interactive commands
-                            reply = random.choice(botans)
-                            engine.say(reply)
-                            txt.insertPlainText(Bot + " : " + reply)
-                            engine.runAndWait()
-
-                        elif comms in readycheck:  # Interactive commands
-                            reply = random.choice(readyans)
-                            engine.say(reply)
-                            txt.insertPlainText(Bot + " : " + reply)
-                            engine.runAndWait()
-
-                        elif comms in frequest[0]:  # Commands to know - Time, Date or Day.
-                            timing()
-
-                        elif comms in frequest[1]:
-                            reply = date
-                            engine.say("Today's date is " + reply)
-                            txt.insertPlainText(Bot + " : " + "today's date is : " + reply + "\n")
-                            engine.runAndWait()
-
-                        elif comms in frequest[2]:
-                            reply = day
-                            engine.say("The day today is : " + reply)
-                            txt.insertPlainText(Bot + " : " + "The day today is - " + reply + "\n")
-                            engine.runAndWait()
-
-                        elif comms in toggleListening[1]:
-                            listenToggle(comms)
-
-                        elif comms in weatherRep:  # Command to get 'weather' information for current location of execution
-                            getLocalWeather()
-
-                        elif (comms in automateKBoard) or (comms in typeMode):  # Automate keyboard keys and shortcuts
-                            keyBoardAutomater(comms)
-
-                        elif comms in whereAbouts:  # Automatically locate the location of execution
-                            getLoc()
-
-                        elif ((comms in mPlayerToggle[0]) or (comms in mPlayerToggle[1]) or (
-                            comms in mPlayerToggle[2])):
-                            mMediaToggle(comms)
-
-                        elif (comms.startswith(
-                                'play')):  # Condition for playing or starting a multimedia file (Song/Video/Music)
-                            mTypeGetter = comms.split()
-                            mPath = ''
-                            if ((mTypeGetter[0] == 'play') and (mTypeGetter[1] in mMediaType[0])):
-                                mPath = 'C:/Users/harsh/Music/'
-                            elif ((mTypeGetter[0] == 'play') and (mTypeGetter[1] in mMediaType[1])):
-                                mPath = 'C:/Users/harsh/Videos/'
-                            elif ((mTypeGetter[0] == 'play') and (mTypeGetter[1] in mMediaType[2])):
-                                mPath = 'C:/Movies/'
-                            for remIndex in range(2):
-                                mTypeGetter.remove(mTypeGetter[0])
-                            mTypeGetter = " ".join(mTypeGetter)
-                            mFilename = mTypeGetter
-                            playMedia(mFilename, mPath)
-
-                            try:
-                                playMFile = vlc.MediaPlayer(mediaName)
-                                playMFile.play()
-                            except:
-                                print ('File not found!')
-
-
-                        elif (comms in closing) or (comms in byes):  # Commands to Exit program
-                            reply = random.choice(byes)
-                            engine.say(reply)
-
-                            txt.insertPlainText(Bot + " : " + reply.capitalize() + "...\n")
-                            engine.runAndWait()
-                            sys.exit()
-
-                        elif ('search' in comms) or ('search' and 'for' in comms) or ('define' in comms) or (
-                            ('what' and 'is') in comms) or ((
-                                                                'who' and 'is') in comms):  # Use 'Search', 'Search For', 'Define', 'who is' or 'what is' to find any definition online.
-                            try:
-                                commlist = (string.capwords(comms)).split()
-                                listlen = len(commlist)
-                                if (((commlist[0] == 'Define') or (commlist[0] == 'Search')) and (listlen <= 1)) or (((
-                                        commlist[0] == 'What' and commlist[1] == 'Is') or (
-                                        commlist[0] == 'Who' and commlist[1] == 'Is') or (
-                                        commlist[0] == 'Search' and commlist[1] == 'For')) and (listlen <= 2)):
-                                    raise
-
-                                elif (commlist[0] == 'Define') or (commlist[0] == 'Search') or (
-                                        commlist[0] == 'Search' and commlist[1] == 'For') or (
-                                        commlist[0] == 'What' and commlist[1] == 'Is') or (
-                                        commlist[0] == 'Who' and commlist[1] == 'Is') or (
-                                        commlist[0] == 'Who' and commlist[1] == 'Are'):
-                                    for x in range(listlen - 1):
-                                        if (commlist[x] in conjunctions) or (commlist[x] in prepositions) or (
-                                            commlist[x] in articles):
-                                            commlist[x] = commlist[x].lower()
-
-                                    if commlist[0] == 'Define':
-                                        commlist.remove('Define')
-                                    elif (commlist[0] == 'Search' and commlist[1] == 'for'):
-                                        commlist.remove('Search')
-                                        commlist.remove('for')
-                                    elif commlist[0] == 'Search':
-                                        commlist.remove('Search')
-                                    elif (commlist[0] == 'What' and commlist[1] == 'Is'):
-                                        commlist.remove('What')
-                                        commlist.remove('Is')
-                                    elif (commlist[0] == 'Who' and commlist[1] == 'Is'):
-                                        commlist.remove('Who')
-                                        commlist.remove('Is')
-                                    elif (commlist[0] == 'Who' and commlist[1] == 'Are'):
-                                        commlist.remove('Who')
-                                        commlist.remove('Are')
-
-                                    searchstr = commlist
-                                    try:
-                                        searchstr = "_".join(commlist)
-                                        txt.verticalScrollBar().setValue(txt.verticalScrollBar().maximum())
-                                        wiki_search = ("https://en.wikipedia.org/wiki/" + searchstr)
-                                        page = urllib2.urlopen(wiki_search)
-                                        soup = BeautifulSoup(page, "html.parser")
-                                        reply = soup.find('h1', {'class': 'firstHeading'})
-                                        txt.insertPlainText("\n" + reply.text + ":-\n")
-                                        reply = soup.find('p')
-                                        txt.insertPlainText("\t" + reply.text + "\n")
-                                        engine.say(reply.text)
-
-                                    except:
-                                        searchstr = commlist
-                                        search = random.choice(webSearch)
-                                        concSay = " ".join(searchstr)
-                                        engine.say(search + "about" + concSay)
-                                        searchstr = "+".join(searchstr)
-                                        webbrowser.open('http://www.google.com/search?q=' + searchstr)
-
-                            except:
-                                searchstr = commlist
-                                search = random.choice(webSearch)
-                                concSay = " ".join(searchstr)
-                                engine.say(search + "about" + concSay)
-                                searchstr = "+".join(searchstr)
-                                webbrowser.open('http://www.google.com/search?q=' + searchstr)
-
-
-                        elif 'calculate' in comms:  # 'Calculate' for calculating arithmetic operations
-                            commlist = comms.split()
-                            try:
-                                if (commlist[2] == '+') or (commlist[2] == 'subtracted') or (
-                                    commlist[2] == 'added') or (commlist[2] == 'times') or (
-                                    commlist[2] == 'multiplied') or (commlist[2] == 'divided') or (
-                                    commlist[2] == 'into') or (commlist[2] == 'upon') or (commlist[2] == 'minus') or (
-                                    commlist[2] == 'by') or (commlist[2] == 'x') or (commlist[2] == '-') or (
-                                    commlist[2] == '/'):
-                                    opr = commlist[2]
-
-                                    # Basic arithmetic calculations -
-                                    def calc():
-                                        if (opr == '+') or (opr == 'added') or (opr == 'plus'):
-                                            res = num1 + num2
-                                            n1 = str(num1)
-                                            n2 = str(num2)
-                                            sol = str(res)
-                                            reply = ('The sum would be ' + sol)
-                                            engine.say('The sum would be ' + sol)
-                                            txt.insertPlainText(Bot + " : " + n1 + ' + ' + n2 + ' = ' + sol + "\n")
-
-                                        elif (opr == '-') or (opr == 'minus') or (opr == 'subtracted'):
-                                            res = num1 - num2
-                                            n1 = str(num1)
-                                            n2 = str(num2)
-                                            sol = str(res)
-                                            reply = ('The difference would be ' + sol)
-                                            engine.say('The difference would be ' + sol)
-                                            txt.insertPlainText(Bot + " : " + n1 + ' - ' + n2 + ' = ' + sol + "\n")
-
-                                        elif (opr == 'x') or (opr == 'into') or (opr == 'multiplied') or (
-                                            opr == 'times'):
-                                            res = num1 * num2
-                                            n1 = str(num1)
-                                            n2 = str(num2)
-                                            sol = str(res)
-                                            reply = ('The product would be ' + sol)
-                                            engine.say('The product would be ' + sol)
-                                            txt.insertPlainText(Bot + " : " + n1 + ' x ' + n2 + ' = ' + sol + "\n")
-
-                                        elif (opr == '/') or (opr == 'divided') or (opr == 'upon') or (opr == 'by'):
-                                            res = num1 / num2
-                                            n1 = str(num1)
-                                            n2 = str(num2)
-                                            sol = str(res)
-                                            reply = ('The result of division would be ' + sol)
-                                            engine.say('The result would be ' + sol)
-                                            txt.insertPlainText(Bot + " : " + n1 + ' / ' + n2 + ' = ' + sol + "\n")
-
-                                        else:
-                                            reply = "Only four basic arithmetic operations allowed right now..."
-                                            engine.say(reply)
-                                            txt.insertPlainText(reply + "\n")
-                                            engine.runAndWait()
-
-                                    if (commlist[3] == 'to') or (commlist[3] == 'by') or (commlist[3] == 'with'):
-                                        oprprep = commlist[3]
-                                        num1 = float(commlist[1])
-                                        num2 = float(commlist[4])
-                                        calc()
-                                    else:
-                                        num1 = float(commlist[1])
-                                        num2 = float(commlist[3])
-                                        calc()
-
-                            except:
-                                txt.insertPlainText('Sorry, couldn\'t understand that...\nPlease try again...')
-
-                        else:
-                            txt.insertPlainText(Bot + " =>\n" + "You said : '" + comms + "'\n")
+                    else:
+                        txt.insertPlainText(Bot + " =>\n" + "You said : '" + comms + "'\n")
 
                 except sr.UnknownValueError as e:
                     txt.insertPlainText('Sorry, couldn\'t understand that... \nPlease try again...')
@@ -1019,8 +751,8 @@ class guiWindow(QtGui.QMainWindow):
 
 
 def run():
-    app = QtGui.QApplication(sys.argv)
-    GUI = guiWindow()
+    app = QApplication(sys.argv)
+    ex = MainWindow()
     sys.exit(app.exec_())
 
 
@@ -1028,6 +760,6 @@ run()
 
 """
     Author - Harshwardhan Natu
-    Python - Python 2.7.12
-    PyQt   - PyQt4 (4.11.4)
+    Python - Python 3.7
+    PyQt   - PyQt5
 """
